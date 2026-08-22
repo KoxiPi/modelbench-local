@@ -1,0 +1,31 @@
+openapi: 3.1.0
+info:
+  title: ModelBench Local API
+  version: 0.1.0
+  description: Local proxy that only permits verified OpenRouter free models.
+paths:
+  /api/models:
+    get:
+      summary: List currently verified free OpenRouter models
+      responses:
+        '200': { description: Free model list }
+  /api/chat:
+    post:
+      summary: Run one prompt against a verified free model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [apiKey, model, prompt]
+              properties:
+                apiKey: { type: string }
+                model: { type: string }
+                prompt: { type: string, maxLength: 30000 }
+                temperature: { type: number, minimum: 0, maximum: 2 }
+                maxTokens: { type: integer, minimum: 1, maximum: 4096 }
+      responses:
+        '200': { description: Normalized model response }
+        '400': { description: Invalid input }
+        '500': { description: Free-model verification or request failure }
