@@ -1,41 +1,103 @@
 # ModelBench Local
 
-一个在本地运行、只允许调用 OpenRouter 免费模型的 AI Prompt 测试台。
+A local AI prompt testing playground that only allows OpenRouter free models.
 
-![ModelBench Local 界面预览](public/modelbench-preview.png)
+![ModelBench Local playground preview](public/modelbench-preview.png)
 
-## 使用技术
+The interface, starter prompt, validation messages, and application metadata are in English. Model responses follow your prompt and the selected model.
 
-| 技术 | 用途 |
+## Features and scope
+
+- Run one prompt at a time against a selected free model or Free Router.
+- View the resolved model, request latency, input/output tokens, and reported cost.
+- Read answers with Markdown headings, lists, bold text, code blocks, and tables.
+- Restore any of the eight most recent successful runs, or clear local history.
+- See a warning when a response reaches its output token limit.
+
+Test suites, batch runs, and result comparison are placeholders and are not yet implemented. Responses are displayed after the request finishes; streaming is not supported.
+
+## Technology
+
+| Technology | Purpose |
 | --- | --- |
-| Next.js 16 + React 19 | Web 界面、组件状态和本地 API 路由 |
-| TypeScript 5 | 前后端类型约束与接口数据建模 |
-| Vinext + Vite 8 | 本地开发服务器与生产构建 |
-| Tailwind CSS 4 + 自定义 CSS | 响应式界面、布局和视觉样式 |
-| OpenRouter API | 获取在线免费模型并执行 Prompt 测试 |
-| OpenAPI 3.1 | 描述 `/api/models` 和 `/api/chat` 接口 |
-| Web Storage | 使用 `sessionStorage` 临时保存 API Key，使用 `localStorage` 保存最近运行记录 |
-| pnpm | 依赖安装与项目脚本管理 |
+| Next.js 16 + React 19 | Web interface, component state, and local API routes |
+| TypeScript 5 | Types and API data modeling |
+| Vinext + Vite 8 | Development server and production builds |
+| Tailwind CSS 4 + custom CSS | Responsive layouts and styling |
+| OpenRouter API | Discover free models and run prompt tests |
+| OpenAPI 3.1 | Describe `/api/models` and `/api/chat` |
+| react-markdown + remark-gfm | Render Markdown answers and tables |
+| Web Storage | API key in `sessionStorage`; recent runs in `localStorage` |
+| pnpm | Dependency and script management |
 
-项目不依赖云端数据库。页面、API 代理和免费模型费用保护均在本地应用中运行；只有模型请求会发送到 OpenRouter。
+No cloud database is required. The interface, API proxy, and cost protection run locally. Model discovery and inference requests are sent to OpenRouter.
 
-## 项目结构
+## Project structure
 
 ```text
-app/
-├── app/page.tsx             # ModelBench 测试界面
-├── app/api/models/route.ts  # 获取并过滤免费模型
-├── app/api/chat/route.ts    # 免费模型验证与请求代理
-├── public/                  # README 截图等静态资源
-└── openapi.yaml             # OpenAPI 3.1 接口定义
+modelbench-local/
+├── app/page.tsx             # ModelBench playground
+├── app/layout.tsx           # English metadata and document language
+├── app/api/models/route.ts  # Discover and filter free models
+├── app/api/chat/route.ts    # Verify free models and proxy requests
+├── start-local.ps1          # Windows launcher with a bundled-runtime fallback
+├── public/                 # Static assets
+└── openapi.yaml             # OpenAPI 3.1 specification
 ```
 
-## 本地启动
+## Run locally
 
-1. 安装 Node.js 22.13 或更高版本，以及 pnpm。
-2. 在本目录执行 `pnpm install`。
-3. 执行 `pnpm dev`。
-4. 打开终端显示的 localhost 地址。
-5. 在页面中临时填写 OpenRouter API Key。
+1. Install Node.js 22.13 or later and pnpm.
+2. Run `pnpm install` in this directory.
+3. Run `pnpm dev`.
+4. Open the localhost URL printed in the terminal.
+5. Create an API key in [OpenRouter settings](https://openrouter.ai/settings/keys), then enter it in the interface.
 
-API Key 只保存在浏览器 `sessionStorage`，不会写入项目文件或历史记录。服务端会在每次请求前验证模型当前仍为零价格；付费模型会被拒绝。
+### Windows PowerShell
+
+From the project directory, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-local.ps1
+```
+
+The launcher uses Node.js and pnpm from your PATH, with a fallback to the Codex bundled runtime under your Windows user profile when available. That fallback is specific to computers with the bundled runtime installed. On other computers, install Node.js 22.13 or later and pnpm first. Run `pnpm install` before the first launch on a fresh clone.
+
+Open the localhost address printed in the terminal. Keep the terminal open while using the app; press **Ctrl+C** to stop it.
+
+### Production build
+
+```sh
+pnpm build
+pnpm start
+```
+
+The API key is stored only in the browser's `sessionStorage`; it is not written to project files or run history. Closing the tab clears the session. Up to eight recent runs are stored locally. Use **Clear history** to remove them.
+
+The server checks the current pricing of explicitly selected `:free` models before each request and rejects models that are not verified as free. The `openrouter/free` router is also allowed.
+
+Cost is displayed from the API's reported usage. Missing cost is shown as **Not reported**, rather than assumed to be zero. Historical records created by older versions may contain a zero that was used as a fallback; run a new test for current usage reporting.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| `pnpm` is not recognized | Use the Windows launcher above, or install pnpm and reopen your terminal. |
+| The page does not open | Keep the server running and use its printed URL; the port may differ if another app is already using it. |
+| Free models cannot be loaded | Check connectivity to OpenRouter and retry by reloading the page. |
+| A request fails | Read the displayed error, verify your API key, try another free model, or retry later. |
+| Cost protection blocks a model | Reload the model list and select a currently verified free model. |
+| An answer is cut off | Increase **Max tokens** (up to 4,096) or ask for a shorter answer. A token-limit warning appears when the API reports this condition. |
+
+Model output and usage fields depend on the upstream response. Prompts and answers are stored in browser history, so **Clear history** removes those local records. Raw HTML in model answers is not rendered.
+
+## Validation
+
+```sh
+pnpm lint
+pnpm exec tsc --noEmit
+pnpm test
+pnpm build
+```
+
+Prompts are limited to 30,000 characters per request. Temperature is bounded to 0–2, and maximum output tokens to 1–4,096.
