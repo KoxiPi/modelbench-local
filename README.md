@@ -2,7 +2,7 @@
 
 A local AI prompt testing playground that only allows OpenRouter free models.
 
-![ModelBench Local playground preview](public/modelbench-preview.png)
+![ModelBench Local English playground preview](public/modelbench-preview-en.png)
 
 The interface, starter prompt, validation messages, and application metadata are in English. Model responses follow your prompt and the selected model.
 
